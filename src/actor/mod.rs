@@ -1,7 +1,5 @@
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::thread::sleep;
-use std::time::Duration;
+use std::sync::{Arc};
+
 use tokio::sync::{mpsc, oneshot};
 
 use crate::store::Store;
@@ -31,18 +29,6 @@ impl DbActor {
             receiver,
         }
     }
-
-    pub async fn handle_message(&mut self, message: DbActorMessage) {
-        match message {
-            DbActorMessage::Get { key, respond_to } => {
-                let _ = respond_to.send(self.store.get_by_key(&key).await);
-            }
-            DbActorMessage::Set { key, value, time, respond_to } => {
-                self.store.insert(key, value, time).await;
-                let _ = respond_to.send(Some("OK".to_string()));
-            }
-        }
-    }
 }
 
 #[derive(Clone)]
@@ -53,6 +39,7 @@ pub struct DbActorHandle {
 impl DbActorHandle {
     pub fn new() -> Self {
         let (sender, receiver) = mpsc::channel(8);
+
         let actor = DbActor::new(receiver);
         tokio::spawn(run_actor(actor));
 
@@ -66,7 +53,6 @@ impl DbActorHandle {
             respond_to: send
         };
         let _ = self.sender.send(msg).await;
-        println!("Get operation");
         recv.await.expect("Actor has been killed")
     }
 
@@ -79,7 +65,6 @@ impl DbActorHandle {
             respond_to: send
         };
         let _ = self.sender.send(msg).await;
-        println!("Set operation");
         let result = recv.await.expect("Actor has been killed");
         result
     }
@@ -88,23 +73,11 @@ impl DbActorHandle {
 async fn run_actor(actor: DbActor) {
     let store = actor.store;
     let mut receiver = actor.receiver;
+
     while let Some(msg) = receiver.recv().await {
         let store = store.clone();
         tokio::spawn(async move {
-            println!("handling message");
-            handle_message(store.as_ref(), msg).await;
+            store.handle_message(msg).await;
         });
-    }
-}
-
-pub async fn handle_message(store: &Store, message: DbActorMessage) {
-    match message {
-        DbActorMessage::Get { key, respond_to } => {
-            let _ = respond_to.send(store.get_by_key(&key).await);
-        }
-        DbActorMessage::Set { key, value, time, respond_to } => {
-            store.insert(key, value, time).await;
-            let _ = respond_to.send(Some("OK".to_string()));
-        }
     }
 }
