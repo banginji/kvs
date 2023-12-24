@@ -17,10 +17,10 @@ impl Store {
 
     pub async fn handle_message(&self, message: DbActorMessage) {
         match message {
-            DbActorMessage::Get { key, respond_to } => {
-                let _ = respond_to.send(self.get_by_key(&key).await);
+            DbActorMessage::Get { key, time_delay, respond_to } => {
+                let _ = respond_to.send(self.get_by_key(&key, time_delay).await);
             }
-            DbActorMessage::Set { key, value, time, respond_to } => {
+            DbActorMessage::Set { key, value, time_delay: time, respond_to } => {
                 self.insert(key, value, time).await;
                 let _ = respond_to.send(Some("OK".to_string()));
             }
@@ -39,11 +39,11 @@ impl Store {
         guard.remove(&key);
     }
 
-    pub async fn get_by_key(&self, key: &String) -> Option<String> {
-        sleep(Duration::from_millis(10)).await;
+    pub async fn get_by_key(&self, key: &String, time_delay: u64) -> Option<String> {
+        sleep(Duration::from_secs(time_delay)).await;
         let guard = self.mem.lock().unwrap();
         let res = guard.get(key).cloned();
-        println!("Get result for key {:?} in thread {:?}: {:?}", key, thread::current().id(), res);
+        println!("Get result for key {:?} with delay {:?} in thread {:?}: {:?}", key, time_delay, thread::current().id(), res);
         res
     }
 

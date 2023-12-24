@@ -12,12 +12,13 @@ pub struct DbActor {
 pub enum DbActorMessage {
     Get {
         key: String,
+        time_delay: u64,
         respond_to: oneshot::Sender<Option<String>>
     },
     Set {
         key: String,
         value: String,
-        time: u64,
+        time_delay: u64,
         respond_to: oneshot::Sender<Option<String>>
     }
 }
@@ -46,22 +47,23 @@ impl DbActorHandle {
         Self { sender }
     }
 
-    pub async fn get_by_key(&self, key: String) -> Option<String> {
+    pub async fn get_by_key(&self, key: String, time_delay: u64) -> Option<String> {
         let (send, recv) = oneshot::channel::<Option<String>>();
         let msg = DbActorMessage::Get {
             key,
+            time_delay,
             respond_to: send
         };
         let _ = self.sender.send(msg).await;
         recv.await.expect("Actor has been killed")
     }
 
-    pub async fn set_value(&self, key: String, value: String, time: u64) -> Option<String> {
+    pub async fn set_value(&self, key: String, value: String, time_delay: u64) -> Option<String> {
         let (send, recv) = oneshot::channel::<Option<String>>();
         let msg = DbActorMessage::Set {
             key,
             value,
-            time,
+            time_delay,
             respond_to: send
         };
         let _ = self.sender.send(msg).await;

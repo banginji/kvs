@@ -19,8 +19,11 @@ async fn main() {
 
     for n in 1..11 {
         let handle = actor_handle.clone();
-
-        let result = handle.get_by_key(n.to_string()).await;
-        println!("Get result: {:?}", result);
+        tokio::spawn(async move {
+            let result = handle.get_by_key(n.to_string(), 5 / n).await;
+            println!("Get result: {:?}", result);
+        });
     }
+
+    sleep(Duration::new(5, 1));
 }
