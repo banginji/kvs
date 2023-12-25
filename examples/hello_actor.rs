@@ -1,5 +1,4 @@
-use std::sync::{Arc, Mutex};
-use std::thread;
+use std::sync::{Arc};
 use std::thread::sleep;
 use std::time::Duration;
 use kvs::actor::DbActorHandle;
@@ -15,15 +14,15 @@ async fn main() {
         });
     }
 
-    sleep(Duration::new(5, 1));
+    sleep(Duration::new(6, 1));
 
     for n in 1..11 {
         let handle = actor_handle.clone();
         tokio::spawn(async move {
-            let result = handle.get_by_key(n.to_string(), 5 / n).await;
+            let result = handle.get_by_key(n.to_string(), 5/n).await;
             println!("Get result: {:?}", result);
         });
     }
 
-    sleep(Duration::new(5, 1));
+    sleep(Duration::new(6, 1));
 }
