@@ -1,5 +1,6 @@
-use std::sync::{Arc};
+use std::sync::Arc;
 
+use bytes::Bytes;
 use tokio::sync::{mpsc, oneshot};
 
 use crate::store::Store;
@@ -11,15 +12,20 @@ pub struct DbActor {
 
 pub enum DbActorMessage {
     Get {
-        key: String,
+        key: Bytes,
         time_delay: u64,
-        respond_to: oneshot::Sender<Option<String>>
+        respond_to: oneshot::Sender<Option<Bytes>>
     },
     Set {
-        key: String,
-        value: String,
+        key: Bytes,
+        value: Bytes,
         time_delay: u64,
-        respond_to: oneshot::Sender<Option<String>>
+        respond_to: oneshot::Sender<Option<Bytes>>
+    },
+    Remove {
+        key: Bytes,
+        time_delay: u64,
+        respond_to: oneshot::Sender<Option<Bytes>>
     }
 }
 
@@ -47,8 +53,8 @@ impl DbActorHandle {
         Self { sender }
     }
 
-    pub async fn get_by_key(&self, key: String, time_delay: u64) -> Option<String> {
-        let (send, recv) = oneshot::channel::<Option<String>>();
+    pub async fn get_by_key(&self, key: Bytes, time_delay: u64) -> Option<Bytes> {
+        let (send, recv) = oneshot::channel::<Option<Bytes>>();
         let msg = DbActorMessage::Get {
             key,
             time_delay,
@@ -58,8 +64,8 @@ impl DbActorHandle {
         recv.await.expect("Actor has been killed")
     }
 
-    pub async fn set_value(&self, key: String, value: String, time_delay: u64) -> Option<String> {
-        let (send, recv) = oneshot::channel::<Option<String>>();
+    pub async fn set_value(&self, key: Bytes, value: Bytes, time_delay: u64) -> Option<Bytes> {
+        let (send, recv) = oneshot::channel::<Option<Bytes>>();
         let msg = DbActorMessage::Set {
             key,
             value,
@@ -69,6 +75,17 @@ impl DbActorHandle {
         let _ = self.sender.send(msg).await;
         let result = recv.await.expect("Actor has been killed");
         result
+    }
+
+    pub async fn remove_value(&self, key: Bytes, time_delay: u64) -> Option<Bytes> {
+        let (send, recv) = oneshot::channel::<Option<Bytes>>();
+        let msg = DbActorMessage::Remove {
+            key,
+            time_delay,
+            respond_to: send
+        };
+        let _ = self.sender.send(msg).await;
+        recv.await.expect("Actor has been killed")
     }
 }
 
