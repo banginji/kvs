@@ -1,5 +1,5 @@
-use tokio::time::Duration;
 use tokio::sync::mpsc;
+use tokio::time::Duration;
 
 #[derive(Clone)]
 pub struct Toy {
@@ -25,7 +25,6 @@ impl Toy {
 
 pub async fn handle_message(mut receiver: mpsc::Receiver<ToyMessage>) {
     while let Some(msg) = receiver.recv().await {
-        println!("In while recv");
         tokio::spawn( async move {
             match msg {
                 ToyMessage::Greetings { payload, time_delay } => {

@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-use std::io;
-use std::io::{BufRead, BufReader, Error, Read, Write};
-use std::net::{TcpListener, TcpStream};
+use std::io::{Error};
+
+use bytes::Bytes;
+
 use kvs::cli::{Cli, KvsCliCommand};
 use kvs::store::Store;
 
@@ -14,14 +14,15 @@ async fn main() -> Result<(), Error> {
 
     match &cli.command {
         KvsCliCommand::GET => {
-            store.get_by_key(&cli.key);
+            store.get_by_key(Bytes::from(cli.key.clone()), 1).await;
         },
         KvsCliCommand::SET => {
-            store.insert(cli.key, "one".to_string(), 2);
+            store.insert(Bytes::from(cli.key), Bytes::from("one".to_string()), 2).await;
+            store.insert(Bytes::from("2"), Bytes::from("two".to_string()), 2).await;
             store.print_all_elements();
         },
         KvsCliCommand::DELETE => {
-            store.remove(cli.key);
+            store.remove(Bytes::from (cli.key), 1).await;
         }
     }
 
