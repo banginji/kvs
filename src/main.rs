@@ -1,30 +1,28 @@
-use std::io::{Error};
+use std::io::Error;
 
 use bytes::Bytes;
 
-use kvs::cli::{Cli, KvsCliCommand};
-use kvs::store::Store;
+use kvs::{actor::kvs_actor::KvsActorHandle, cli::{Cli, KvsCliCommand}};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let store = Store::new();
+    let handle = KvsActorHandle::new();
 
-    use clap::Parser;
-    let cli = Cli::parse();
-
-    match &cli.command {
-        KvsCliCommand::GET => {
-            store.get_by_key(Bytes::from(cli.key.clone()), 1).await;
-        },
-        KvsCliCommand::SET => {
-            store.insert(Bytes::from(cli.key), Bytes::from("one".to_string()), 2).await;
-            store.insert(Bytes::from("2"), Bytes::from("two".to_string()), 2).await;
-            store.print_all_elements();
-        },
-        KvsCliCommand::DELETE => {
-            store.remove(Bytes::from (cli.key), 1).await;
+    loop {
+        use clap::Parser;
+        let cli = Cli::parse();
+        
+        match &cli.command {
+            KvsCliCommand::GET => {
+                handle.get_by_key(Bytes::from(cli.key.clone())).await;
+            },
+            KvsCliCommand::SET => {
+                handle.set_value(Bytes::from(cli.key), Bytes::from("one".to_string())).await;
+                handle.set_value(Bytes::from("2"), Bytes::from("two".to_string())).await;
+            },
+            KvsCliCommand::DELETE => {
+                handle.remove_value(Bytes::from (cli.key)).await;
+            }
         }
     }
-
-    Ok(())
 }

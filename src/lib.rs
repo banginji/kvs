@@ -1,4 +1,4 @@
 pub mod cli;
 pub mod store;
 pub mod actor;
-pub mod toy;
+pub mod mem_table;
