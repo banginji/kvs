@@ -3,8 +3,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use bytes::Bytes;
-
-use kvs::actor::kvs_actor::KvsActorHandle;
+use kvs::actor::kvs_actor_handle::KvsActorHandle;
 
 #[tokio::main]
 async fn main() {

@@ -2,7 +2,7 @@ use std::io::Error;
 
 use bytes::Bytes;
 
-use kvs::{actor::kvs_actor::KvsActorHandle, cli::{Cli, KvsCliCommand}};
+use kvs::{actor::kvs_actor_handle::KvsActorHandle, cli::{Cli, KvsCliCommand}};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -12,7 +12,7 @@ async fn main() -> Result<(), Error> {
         use clap::Parser;
         let cli = Cli::parse();
         
-        match &cli.command {
+        match cli.command {
             KvsCliCommand::GET => {
                 handle.get_by_key(Bytes::from(cli.key.clone())).await;
             },

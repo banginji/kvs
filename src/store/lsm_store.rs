@@ -1,6 +1,6 @@
 use bytes::Bytes;
 
-use crate::{actor::kvs_actor::KvsActorMessage, mem_table::MemTable};
+use crate::{actor::KvsActorMessage, mem_table::MemTable};
 
 pub struct LsmStore {
     mem_table: MemTable
