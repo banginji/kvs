@@ -3,11 +3,52 @@ use std::{fs::remove_file, io::Error, sync::Arc};
 use bytes::Bytes;
 use futures::{SinkExt, StreamExt};
 use kvs::{actor::kvs_actor_handle::KvsActorHandle, cli::{kvs_command::KvsCliCommand, kvs_server_codec::KvsServerCodec}};
+use opentelemetry::{trace::{TraceContextExt, TraceError, Tracer as ot_tracer}, KeyValue};
+use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_sdk::{runtime, trace::{Config, Tracer}, Resource};
+use opentelemetry_semantic_conventions::resource::SERVICE_NAME;
 use tokio::net::UnixListener;
 use tokio_util::codec::Framed;
 
+fn init_tracer() -> Result<Tracer, TraceError> {
+    opentelemetry_otlp::new_pipeline()
+        .tracing()
+        .with_exporter(
+            opentelemetry_otlp::new_exporter()
+                .tonic()
+                .with_endpoint("http://localhost:4317")
+        )
+        .with_trace_config(
+            Config::default()
+                .with_resource(
+                    Resource::new(
+                        vec![
+                            KeyValue::new(
+                                SERVICE_NAME, 
+                                "kvs_server_tracing"
+                            )
+                        ]
+                    )
+                )
+        )
+        .install_batch(runtime::Tokio)
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    console_subscriber::init();
+
+    let tracer = init_tracer().expect("failed to initialize tracer provider");
+
+    tracer.in_span("in server main", |cx| {
+        let span = cx.span();
+        span.set_attribute(KeyValue::new("server-main", "svr-main"));
+        span.add_event(
+            "main-span-event", 
+            vec![KeyValue::new("foo", "1")]
+        )
+    });
+
     let socket_path = "/tmp/kvs_daemon.sock";
     let _ = remove_file(socket_path);
 
